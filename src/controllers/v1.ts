@@ -3,6 +3,7 @@ import { FilterQuery, LeanDocument } from 'mongoose';
 
 import i18n from 'helpers/i18n';
 import CreditEvaluation, { ICreditEvaluation } from 'models/creditEvaluation';
+import Customer from 'models/customer';
 
 type LeanCreditEvaluation = LeanDocument<ICreditEvaluation> & { createdAt?: Date; updatedAt?: Date };
 
@@ -106,6 +107,44 @@ export const getCreditEvaluation: RequestHandler = async (req, res, next) => {
 		}
 
 		res.json({ data: serializeCreditEvaluation(creditEvaluation) });
+	} catch (err) {
+		next(err);
+	}
+};
+
+// Narrow read surface for HubSpot's credit-result repair workflow. The ordinary
+// external representation deliberately omits report links; only an admin
+// organisation API key may retrieve them here. No credit pull is performed.
+export const getCreditEvaluationForHubSpotRepair: RequestHandler = async (req, res, next) => {
+	try {
+		if (req.auth.organisation?.type !== 'admin') {
+			return res.status(403).json({ message: i18n.__('MIDDLEWARE.AUTH.NOT_AUTHORIZED') });
+		}
+
+		const creditEvaluation = await CreditEvaluation.findById(req.params.id)
+			.select('customer hubspotDealId html pdf reportDate creditScores declineReasonCodes')
+			.lean();
+		if (!creditEvaluation) {
+			return res.status(404).json({ message: 'Credit evaluation not found.' });
+		}
+
+		const customer = creditEvaluation.customer
+			? await Customer.findById(creditEvaluation.customer).select('hubspotId').lean()
+			: null;
+
+		res.json({
+			data: {
+				id: creditEvaluation._id,
+				hubspotDealId: creditEvaluation.hubspotDealId,
+				hubspotContactId: customer?.hubspotId,
+				customerId: customer?._id,
+				reportDate: creditEvaluation.reportDate,
+				html: creditEvaluation.html,
+				pdf: creditEvaluation.pdf,
+				creditScores: creditEvaluation.creditScores,
+				declineReasonCodes: creditEvaluation.declineReasonCodes,
+			},
+		});
 	} catch (err) {
 		next(err);
 	}
