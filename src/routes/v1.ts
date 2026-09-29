@@ -4,6 +4,7 @@ import defineRoutes from 'helpers/defineRoutes';
 import {
 	getCreditEvaluations as getCreditEvaluationsController,
 	getCreditEvaluation as getCreditEvaluationController,
+	getCreditEvaluationForHubSpotRepair as getCreditEvaluationForHubSpotRepairController,
 } from 'controllers/v1';
 import apiKeyAuth from 'middlewares/apiKeyAuth';
 
@@ -23,6 +24,12 @@ defineRoutes(router, [
 		route: '/credit-evaluations/:id',
 		middlewares: [apiKeyAuth(['read:credit-evaluations'])],
 		controller: getCreditEvaluationController,
+	},
+	{
+		method: 'get',
+		route: '/credit-evaluations/:id/hubspot-repair',
+		middlewares: [apiKeyAuth(['read:credit-evaluations'])],
+		controller: getCreditEvaluationForHubSpotRepairController,
 	},
 ]);
 
