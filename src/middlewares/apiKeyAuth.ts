@@ -40,6 +40,7 @@ const apiKeyAuth: (permissions: PermissionsType[]) => RequestHandler = (permissi
 		req.auth = {
 			id: apiKey._id.toString(),
 			organisation,
+			permissions: apiKey.permissions,
 		};
 
 		next();

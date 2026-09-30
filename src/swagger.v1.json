@@ -110,6 +110,10 @@
 				"creditLimit": { "type": "number" },
 				"opened": { "type": "string", "format": "date-time" },
 				"reportDate": { "type": "string", "format": "date-time" },
+				"pdf": {
+					"type": "string",
+					"description": "URL of the generated credit-report PDF. Only present for keys with the `read:credit-reports` scope."
+				},
 				"accountType": { "type": "string" },
 				"utilizationRate": { "type": "number" },
 				"typeDetail": { "type": "string" }

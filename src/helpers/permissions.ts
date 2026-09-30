@@ -22,6 +22,8 @@ enum Permissions {
 	CREDIT_EVALUATIONS_WRITE = 'write:credit-evaluations',
 	CREDIT_EVALUATIONS_UPDATE = 'update:credit-evaluations',
 	CREDIT_EVALUATIONS_DELETE = 'delete:credit-evaluations',
+	// API-key only: exposes the generated credit-report PDF link on /api/v1.
+	CREDIT_REPORTS_READ = 'read:credit-reports',
 
 	LOAN_PACKAGES_READ = 'read:loan-packages',
 	LOAN_PACKAGES_WRITE = 'write:loan-packages',

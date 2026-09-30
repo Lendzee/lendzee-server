@@ -6,6 +6,8 @@ declare namespace Express {
 		auth: {
 			id: string;
 			organisation: LeanDocument<IOrganisation> | undefined;
+			// Set by apiKeyAuth only: the scopes granted to the calling key.
+			permissions?: string[];
 		};
 	}
 }

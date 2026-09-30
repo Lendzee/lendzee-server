@@ -8,13 +8,15 @@ import Customer from 'models/customer';
 type LeanCreditEvaluation = LeanDocument<ICreditEvaluation> & { createdAt?: Date; updatedAt?: Date };
 
 // Curated external representation. Deliberately omits sensitive/internal fields
-// (raw credit-report `html`/`pdf`, underwriter `notes`, the internal `customer` ref).
-const serializeCreditEvaluation = (creditEvaluation: LeanCreditEvaluation) => ({
+// (raw credit-report `html`, underwriter `notes`, the internal `customer` ref).
+// The report `pdf` link is only included for keys holding `read:credit-reports`.
+const serializeCreditEvaluation = (creditEvaluation: LeanCreditEvaluation, includePdf = false) => ({
 	id: creditEvaluation._id,
 	hubspotDealId: creditEvaluation.hubspotDealId,
 	leadSource: creditEvaluation.leadSource,
 	state: creditEvaluation.state,
 	reportDate: creditEvaluation.reportDate,
+	...(includePdf && { pdf: creditEvaluation.pdf }),
 	createdAt: creditEvaluation.createdAt,
 	updatedAt: creditEvaluation.updatedAt,
 
@@ -55,6 +57,8 @@ const serializeCreditEvaluation = (creditEvaluation: LeanCreditEvaluation) => ({
 	},
 });
 
+const canReadPdf = (permissions?: string[]) => !!permissions?.includes('read:credit-reports');
+
 export const getCreditEvaluations: RequestHandler = async (req, res, next) => {
 	try {
 		const { organisation } = req.auth;
@@ -74,11 +78,12 @@ export const getCreditEvaluations: RequestHandler = async (req, res, next) => {
 		}
 
 		const creditEvaluations = (await CreditEvaluation.find(filters)
-			.select('-html -pdf -notes')
+			.select('-html -notes')
 			.sort({ createdAt: -1 })
 			.lean()) as LeanCreditEvaluation[];
 
-		res.json({ data: creditEvaluations.map(serializeCreditEvaluation) });
+		const includePdf = canReadPdf(req.auth.permissions);
+		res.json({ data: creditEvaluations.map((creditEvaluation) => serializeCreditEvaluation(creditEvaluation, includePdf)) });
 	} catch (err) {
 		next(err);
 	}
@@ -94,7 +99,7 @@ export const getCreditEvaluation: RequestHandler = async (req, res, next) => {
 		}
 
 		const creditEvaluation = (await CreditEvaluation.findById(id)
-			.select('-html -pdf -notes')
+			.select('-html -notes')
 			.lean()) as LeanCreditEvaluation | null;
 
 		if (!creditEvaluation) {
@@ -106,7 +111,7 @@ export const getCreditEvaluation: RequestHandler = async (req, res, next) => {
 			return res.status(403).json({ message: i18n.__('MIDDLEWARE.AUTH.NOT_AUTHORIZED') });
 		}
 
-		res.json({ data: serializeCreditEvaluation(creditEvaluation) });
+		res.json({ data: serializeCreditEvaluation(creditEvaluation, canReadPdf(req.auth.permissions)) });
 	} catch (err) {
 		next(err);
 	}
